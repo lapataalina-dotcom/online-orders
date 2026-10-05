@@ -14,6 +14,7 @@ import com.shop.domain.User;
 import com.shop.notify.EmailNotifier;
 import com.shop.payment.CreditCardPayment;
 import com.shop.service.OrderServiceImpl;
+import com.shop.storage.OrderStorage;
 import com.shop.storage.Storage;
 
 import java.util.ArrayList;
@@ -55,6 +56,7 @@ public class Main {
         notifier     = new EmailNotifier("smtp.food-delivery.by");
         processor = new OrderProcessor(orderService, payment, delivery, notifier);
         Storage.init();
+        OrderStorage.init();
     }
 
     private static void menu() {
@@ -153,6 +155,7 @@ public class Main {
         }
         user.place(order);
         cart.clear();
+        OrderStorage.save(order);
         System.out.printf("Заказ #%d оформлен. Сумма: %.2f%n", order.getId(), order.total());
     }
 
