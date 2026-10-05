@@ -32,7 +32,7 @@ public class Order {
     public void ship(IDeliveryService d) {
         d.deliver(this);
     }
-
+    public List<OrderItem> getItems() { return items; }
     public int getId() { return id; }
     public User getCustomer() { return customer; }
 }

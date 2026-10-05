@@ -13,6 +13,6 @@ public class OrderItem {
     public double subtotal() {
         return product.getPrice() * qty;
     }
-
+    public int getQty() { return qty; }
     public Product getProduct() { return product; }
 }
