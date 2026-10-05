@@ -99,7 +99,7 @@ public class Main {
     }
 
     private static void showCatalog() {
-        System.out.println("--- Каталог ---");
+        System.out.println("Каталог ");
         for (Product p : catalog) {
             System.out.println(p.info());
         }
@@ -127,7 +127,7 @@ public class Main {
             System.out.println("Корзина пуста.");
             return;
         }
-        System.out.println("--- Корзина ---");
+        System.out.println("Корзина");
         double sum = 0;
         for (Product p : cart.getItems()) {
             System.out.println(p.info());
@@ -159,7 +159,7 @@ public class Main {
             System.out.println("Заказ ещё не создан.");
             return;
         }
-        System.out.println("--- Заказ #" + order.getId() + " ---");
+        System.out.println("Заказ #" + order.getId());
         System.out.println("Клиент: " + order.getCustomer().getName());
         System.out.printf("Сумма: %.2f%n", order.total());
     }
@@ -169,7 +169,7 @@ public class Main {
             System.out.println("Сначала оформите заказ (п.5).");
             return;
         }
-        System.out.println("--- Оплата и доставка ---");
+        System.out.println("Оплата и доставка");
         processor.checkout(order);
     }
 
