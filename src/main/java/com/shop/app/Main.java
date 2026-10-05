@@ -18,7 +18,9 @@ import com.shop.storage.OrderStorage;
 import com.shop.storage.Storage;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -26,8 +28,10 @@ public class Main {
     private static final Scanner in = new Scanner(System.in);
 
     private static final List<Product> catalog = new ArrayList<>();
+    private static final Map<Integer, User> users = new LinkedHashMap<>();
     private static final Cart cart = new Cart();
-    private static User user;
+
+    private static User current;
     private static Order order;
 
     private static IOrderService orderService;
@@ -54,7 +58,9 @@ public class Main {
         payment      = new CreditCardPayment("4276-****-****-1234");
         delivery     = new CourierDelivery("Минск, ул. Ленина 1");
         notifier     = new EmailNotifier("smtp.food-delivery.by");
+
         processor = new OrderProcessor(orderService, payment, delivery, notifier);
+
         Storage.init();
         OrderStorage.init();
     }
@@ -62,33 +68,36 @@ public class Main {
     private static void menu() {
         while (true) {
             System.out.println();
-            System.out.println("1. Создать пользователя");
-            System.out.println("2. Показать каталог товаров");
-            System.out.println("3. Добавить товар в корзину");
-            System.out.println("4. Показать корзину");
-            System.out.println("5. Оформить заказ");
-            System.out.println("6. Показать заказ");
-            System.out.println("7. Оплатить и доставить");
-            System.out.println("8. Информация о системе");
-            System.out.println("9. Показать всех пользователей (из файла)");
-            System.out.println("10. Показать все заказы (из файла)");
-            System.out.println("0. Выход");
+            System.out.println("Активный пользователь: " + activeLabel());
+            System.out.println("1.  Создать пользователя");
+            System.out.println("2.  Выбрать пользователя");
+            System.out.println("3.  Показать меню блюд");
+            System.out.println("4.  Добавить блюдо в корзину");
+            System.out.println("5.  Показать корзину");
+            System.out.println("6.  Оформить заказ");
+            System.out.println("7.  Показать заказ");
+            System.out.println("8.  Оплатить и доставить");
+            System.out.println("9.  Информация о системе");
+            System.out.println("10. Показать всех пользователей (из файла)");
+            System.out.println("11. Показать все заказы (из файла)");
+            System.out.println("0.  Выход");
             System.out.print("Выбор: ");
 
             String s = in.nextLine().trim();
 
             switch (s) {
-                case "1" -> createUser();
-                case "2" -> showCatalog();
-                case "3" -> addToCart();
-                case "4" -> showCart();
-                case "5" -> makeOrder();
-                case "6" -> showOrder();
-                case "7" -> payAndDeliver();
-                case "8" -> showInfo();
-                case "9" -> showAllUsers();
-                case "10" -> showAllOrders();
-                case "0" -> {
+                case "1"  -> createUser();
+                case "2"  -> selectUser();
+                case "3"  -> showCatalog();
+                case "4"  -> addToCart();
+                case "5"  -> showCart();
+                case "6"  -> makeOrder();
+                case "7"  -> showOrder();
+                case "8"  -> payAndDeliver();
+                case "9"  -> showInfo();
+                case "10" -> showAllUsers();
+                case "11" -> showAllOrders();
+                case "0"  -> {
                     System.out.println("Пока!");
                     return;
                 }
@@ -97,70 +106,108 @@ public class Main {
         }
     }
 
+    private static String activeLabel() {
+        return current == null
+                ? "— (не выбран)"
+                : current.getName() + " #" + current.getId();
+    }
+
     private static void createUser() {
         System.out.print("Ваше имя: ");
         String name = in.nextLine().trim();
+        if (name.isEmpty()) {
+            System.out.println("Имя не может быть пустым.");
+            return;
+        }
         int id = Storage.nextUserId();
-        user = new User(id, name);
-        Storage.saveUser(user);
-        System.out.println("Пользователь создан: #" + user.getId() + " " + user.getName());
+        User u = new User(id, name);
+        users.put(id, u);
+        Storage.saveUser(u);
+        current = u;
+        System.out.println("Создан и выбран: " + activeLabel());
+    }
+
+    private static void selectUser() {
+        if (users.isEmpty()) {
+            System.out.println("Пользователей ещё нет. Создайте (п.1).");
+            return;
+        }
+        System.out.println("--- Выбор пользователя ---");
+        for (User u : users.values()) {
+            String mark = (current != null && current.getId() == u.getId())
+                    ? " ← текущий" : "";
+            System.out.printf("  #%d %s%s%n", u.getId(), u.getName(), mark);
+        }
+        System.out.print("ID пользователя: ");
+        int id = readInt();
+        User u = users.get(id);
+        if (u == null) {
+            System.out.println("Пользователь не найден.");
+            return;
+        }
+        current = u;
+        System.out.println("Теперь активен: " + activeLabel());
     }
 
     private static void showCatalog() {
-        System.out.println("Каталог ");
+        System.out.println("--- Меню блюд ---");
         for (Product p : catalog) {
-            System.out.println(p.info());
+            System.out.println("  " + p.info());
         }
     }
 
     private static void addToCart() {
-        if (user == null) {
-            System.out.println("Сначала создайте пользователя (п.1).");
+        if (current == null) {
+            System.out.println("Сначала создайте или выберите пользователя (п.1 или п.2).");
             return;
         }
         showCatalog();
-        System.out.print("ID товара: ");
+        System.out.print("ID блюда: ");
         int id = readInt();
         Product p = catalog.stream().filter(x -> x.getId() == id).findFirst().orElse(null);
         if (p == null) {
-            System.out.println("Товар не найден.");
+            System.out.println("Блюдо не найдено.");
             return;
         }
         cart.add(p);
-        System.out.println("Добавлено: " + p.info());
+        System.out.printf("Добавлено для %s: %s%n", current.getName(), p.info());
     }
 
     private static void showCart() {
-        if (cart.getItems().isEmpty()) {
-            System.out.println("Корзина пуста.");
+        if (current == null) {
+            System.out.println("Сначала создайте или выберите пользователя.");
             return;
         }
-        System.out.println("Корзина");
+        if (cart.getItems().isEmpty()) {
+            System.out.println("Корзина пуста у " + activeLabel());
+            return;
+        }
+        System.out.println("Корзина: " + activeLabel());
         double sum = 0;
         for (Product p : cart.getItems()) {
-            System.out.println(p.info());
+            System.out.println("  " + p.info());
             sum += p.getPrice();
         }
         System.out.printf("Итого: %.2f%n", sum);
     }
 
     private static void makeOrder() {
-        if (user == null) {
-            System.out.println("Сначала создайте пользователя (п.1).");
+        if (current == null) {
+            System.out.println("Сначала создайте или выберите пользователя.");
             return;
         }
         if (cart.getItems().isEmpty()) {
-            System.out.println("Корзина пуста.");
+            System.out.println("Корзина пуста у " + activeLabel());
             return;
         }
-        order = processor.process(user);
+        order = processor.process(current);
         for (Product p : cart.getItems()) {
             order.add(new OrderItem(p, 1));
         }
-        user.place(order);
+        current.place(order);
         cart.clear();
         OrderStorage.save(order);
-        System.out.printf("Заказ #%d оформлен. Сумма: %.2f%n", order.getId(), order.total());
+        System.out.printf("Заказ #%d оформлен для %s. Сумма: %.2f%n", order.getId(), current.getName(), order.total());
     }
 
     private static void showOrder() {
@@ -169,13 +216,13 @@ public class Main {
             return;
         }
         System.out.println("Заказ #" + order.getId());
-        System.out.println("Клиент: " + order.getCustomer().getName());
+        System.out.println("Клиент: " + order.getCustomer().getName() + " #" + order.getCustomer().getId());
         System.out.printf("Сумма: %.2f%n", order.total());
     }
 
     private static void payAndDeliver() {
         if (order == null) {
-            System.out.println("Сначала оформите заказ (п.5).");
+            System.out.println("Сначала оформите заказ");
             return;
         }
         System.out.println("Оплата и доставка");
@@ -191,13 +238,6 @@ public class Main {
         System.out.println("OrderProcessor   DI через конструктор (Loose Coupling)");
     }
 
-    private static int readInt() {
-        try {
-            return Integer.parseInt(in.nextLine().trim());
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
     private static void showAllUsers() {
         System.out.println("Пользователи");
         var rows = Storage.loadUsers();
@@ -219,6 +259,14 @@ public class Main {
         }
         for (String r : rows) {
             System.out.println("  " + r);
+        }
+    }
+
+    private static int readInt() {
+        try {
+            return Integer.parseInt(in.nextLine().trim());
+        } catch (NumberFormatException e) {
+            return -1;
         }
     }
 }
