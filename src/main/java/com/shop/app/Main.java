@@ -14,6 +14,7 @@ import com.shop.domain.User;
 import com.shop.notify.EmailNotifier;
 import com.shop.payment.CreditCardPayment;
 import com.shop.service.OrderServiceImpl;
+import com.shop.storage.Storage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +53,8 @@ public class Main {
         payment      = new CreditCardPayment("4276-****-****-1234");
         delivery     = new CourierDelivery("Минск, ул. Ленина 1");
         notifier     = new EmailNotifier("smtp.food-delivery.by");
-
-
         processor = new OrderProcessor(orderService, payment, delivery, notifier);
+        Storage.init();
     }
 
     private static void menu() {
@@ -94,7 +94,9 @@ public class Main {
     private static void createUser() {
         System.out.print("Ваше имя: ");
         String name = in.nextLine().trim();
-        user = new User(1, name);
+        int id = Storage.nextUserId();
+        user = new User(id, name);
+        Storage.saveUser(user);
         System.out.println("Пользователь создан: #" + user.getId() + " " + user.getName());
     }
 
