@@ -70,6 +70,8 @@ public class Main {
             System.out.println("6. Показать заказ");
             System.out.println("7. Оплатить и доставить");
             System.out.println("8. Информация о системе");
+            System.out.println("9. Показать всех пользователей (из файла)");
+            System.out.println("10. Показать все заказы (из файла)");
             System.out.println("0. Выход");
             System.out.print("Выбор: ");
 
@@ -84,6 +86,8 @@ public class Main {
                 case "6" -> showOrder();
                 case "7" -> payAndDeliver();
                 case "8" -> showInfo();
+                case "9" -> showAllUsers();
+                case "10" -> showAllOrders();
                 case "0" -> {
                     System.out.println("Пока!");
                     return;
@@ -192,6 +196,29 @@ public class Main {
             return Integer.parseInt(in.nextLine().trim());
         } catch (NumberFormatException e) {
             return -1;
+        }
+    }
+    private static void showAllUsers() {
+        System.out.println("Пользователи");
+        var rows = Storage.loadUsers();
+        if (rows.isEmpty()) {
+            System.out.println("Нет записей.");
+            return;
+        }
+        for (String r : rows) {
+            System.out.println("  " + r);
+        }
+    }
+
+    private static void showAllOrders() {
+        System.out.println("Заказы");
+        var rows = OrderStorage.loadOrders();
+        if (rows.isEmpty()) {
+            System.out.println("Нет записей.");
+            return;
+        }
+        for (String r : rows) {
+            System.out.println("  " + r);
         }
     }
 }
